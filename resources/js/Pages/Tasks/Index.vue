@@ -9,13 +9,18 @@
  */
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
-defineProps({
+const props = defineProps({
     tasks: {
         type: Array,
         required: true,
     },
 });
+
+const remainingCount = computed(
+    () => props.tasks.filter((task) => !task.completed).length,
+);
 
 function destroy(task) {
     if (confirm(`Delete "${task.title}"?`)) {
@@ -35,6 +40,9 @@ function destroy(task) {
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">
                     Tasks
+                    <span class="ml-2 text-sm font-normal text-gray-500">
+                        {{ remainingCount }} remaining
+                    </span>
                 </h2>
                 <Link
                     :href="route('tasks.create')"
