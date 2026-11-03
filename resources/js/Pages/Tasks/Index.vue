@@ -8,13 +8,31 @@
  * before Vue even mounts. See LEARNING.md "props/emits vs props/callbacks".
  */
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import InputLabel from '@/Components/InputLabel.vue';
+import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
-defineProps({
+const props = defineProps({
     tasks: {
         type: Array,
         required: true,
     },
+});
+
+const searchQuery = ref('');
+
+const filteredTasks = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase();
+    if (!q) {
+        return props.tasks;
+    }
+
+    return props.tasks.filter((task) =>
+        String(task.title ?? '')
+            .toLowerCase()
+            .includes(q),
+    );
 });
 
 function destroy(task) {
@@ -48,12 +66,24 @@ function destroy(task) {
         <div class="py-12">
             <div class="mx-auto max-w-4xl sm:px-6 lg:px-8">
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    <div class="border-b border-gray-200 p-4">
+                        <InputLabel for="task-search" value="Search" />
+                        <TextInput
+                            id="task-search"
+                            v-model="searchQuery"
+                            type="search"
+                            class="mt-1 block w-full"
+                            placeholder="Filter by title…"
+                            autocomplete="off"
+                        />
+                    </div>
+
                     <ul
-                        v-if="tasks.length"
+                        v-if="filteredTasks.length"
                         class="divide-y divide-gray-200"
                     >
                         <li
-                            v-for="task in tasks"
+                            v-for="task in filteredTasks"
                             :key="task.id"
                             class="flex items-center justify-between gap-4 p-4"
                         >
@@ -98,7 +128,17 @@ function destroy(task) {
                         </li>
                     </ul>
 
-                    <p v-else class="p-6 text-gray-500">
+                    <p
+                        v-else-if="tasks.length"
+                        class="p-6 text-gray-500"
+                    >
+                        No tasks match your search.
+                    </p>
+
+                    <p
+                        v-else
+                        class="p-6 text-gray-500"
+                    >
                         No tasks yet — create your first one.
                     </p>
                 </div>
