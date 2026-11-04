@@ -4,6 +4,7 @@ import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import TagInput from '@/Components/TagInput.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
@@ -12,6 +13,7 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    availableTags: { type: Array, default: () => [] },
 });
 
 // useForm seeded from a prop is the Inertia equivalent of a React
@@ -22,6 +24,7 @@ const form = useForm({
     title: props.task.title,
     description: props.task.description,
     completed: props.task.completed,
+    tags: (props.task.tags ?? []).map((t) => t.name),
 });
 
 function submit() {
@@ -64,6 +67,12 @@ function submit() {
                                 rows="4"
                             />
                             <InputError class="mt-2" :message="form.errors.description" />
+                        </div>
+
+                        <div>
+                            <InputLabel for="tags" value="Tags" />
+                            <TagInput id="tags" v-model="form.tags" :suggestions="availableTags" />
+                            <InputError class="mt-2" :message="form.errors.tags" />
                         </div>
 
                         <div class="flex items-center gap-2">

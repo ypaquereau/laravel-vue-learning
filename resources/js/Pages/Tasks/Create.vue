@@ -11,12 +11,18 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import TagInput from '@/Components/TagInput.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, useForm } from '@inertiajs/vue3';
+
+defineProps({
+    availableTags: { type: Array, default: () => [] },
+});
 
 const form = useForm({
     title: '',
     description: '',
+    tags: [],
 });
 
 function submit() {
@@ -59,6 +65,12 @@ function submit() {
                                 rows="4"
                             />
                             <InputError class="mt-2" :message="form.errors.description" />
+                        </div>
+
+                        <div>
+                            <InputLabel for="tags" value="Tags" />
+                            <TagInput id="tags" v-model="form.tags" :suggestions="availableTags" />
+                            <InputError class="mt-2" :message="form.errors.tags" />
                         </div>
 
                         <div class="flex items-center gap-4">

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -22,6 +23,14 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-        Task::factory(8)->for($user)->create();
+        $tasks = Task::factory(8)->for($user)->create();
+
+        $work = Tag::factory()->for($user)->create(['name' => 'work', 'slug' => 'work']);
+        $home = Tag::factory()->for($user)->create(['name' => 'home', 'slug' => 'home']);
+        $urgent = Tag::factory()->for($user)->create(['name' => 'urgent', 'slug' => 'urgent']);
+
+        $tasks[0]->tags()->attach([$work->id, $urgent->id]);
+        $tasks[1]->tags()->attach([$home->id]);
+        $tasks[2]->tags()->attach([$work->id]);
     }
 }

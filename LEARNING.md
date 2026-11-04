@@ -105,6 +105,8 @@ Relationships are methods, not mapped properties:
 (no parens, magic property access) lazy-loads it — same N+1 risk as Doctrine's
 lazy proxies, same fix (`->with('user')` instead of
 `JOIN`/`fetch: EAGER`).
+`Task::tags()` / `Tag::tasks()` are the `belongsToMany` analogue of Doctrine
+`#[ManyToMany]`, with pivot table `task_tag`.
 
 Mass-assignment protection is the other surprise: Eloquent models default to
 **blocking** `fill()`/`create()` for every column, until you allow-list them —
@@ -325,13 +327,16 @@ directly — which neither React nor Symfony actually offers out of the box.
 |---|---|
 | Routes | [`routes/web.php`](routes/web.php) |
 | Migration | [`database/migrations/..._create_tasks_table.php`](database/migrations) |
-| Model + relationships | [`app/Models/Task.php`](app/Models/Task.php), [`app/Models/User.php`](app/Models/User.php) |
+| Tags migrations | [`database/migrations/..._create_tags_table.php`](database/migrations/2026_11_04_000001_create_tags_table.php), [`..._create_task_tag_table.php`](database/migrations/2026_11_04_000002_create_task_tag_table.php) |
+| Model + relationships | [`app/Models/Task.php`](app/Models/Task.php), [`app/Models/User.php`](app/Models/User.php), [`app/Models/Tag.php`](app/Models/Tag.php) |
+| Tag sync (find-or-create + pivot) | [`app/Support/SyncTaskTags.php`](app/Support/SyncTaskTags.php) |
 | Validation | [`app/Http/Requests/StoreTaskRequest.php`](app/Http/Requests/StoreTaskRequest.php), [`UpdateTaskRequest.php`](app/Http/Requests/UpdateTaskRequest.php) |
 | Authorization | [`app/Policies/TaskPolicy.php`](app/Policies/TaskPolicy.php) |
 | Controller | [`app/Http/Controllers/TaskController.php`](app/Http/Controllers/TaskController.php) |
 | Pages (Vue) | [`resources/js/Pages/Tasks/`](resources/js/Pages/Tasks/) |
+| Tag input (Vue) | [`resources/js/Components/TagInput.vue`](resources/js/Components/TagInput.vue) |
 | Shared state (Pinia) | [`resources/js/stores/flash.js`](resources/js/stores/flash.js) |
-| Fixtures | [`database/factories/TaskFactory.php`](database/factories/TaskFactory.php), [`database/seeders/DatabaseSeeder.php`](database/seeders/DatabaseSeeder.php) |
+| Fixtures | [`database/factories/TaskFactory.php`](database/factories/TaskFactory.php), [`database/factories/TagFactory.php`](database/factories/TagFactory.php), [`database/seeders/DatabaseSeeder.php`](database/seeders/DatabaseSeeder.php) |
 
 ## Part 4 — Exercises to push this further
 
@@ -347,6 +352,8 @@ Roughly in order of how much new ground each one covers:
 3. **Add task categories** — a `Category` model, `belongsTo`/`hasMany`
    between `Task` and `Category`, and a `<select>` in `Create.vue`/`Edit.vue`.
    Practices a second real Eloquent relationship beyond the User↔Task one.
+   (Tags already demonstrate `belongsToMany` via `task_tag`; categories remain
+   the useful `belongsTo` drill.)
 4. **Swap Pinia's role** — add a client-only "hide completed tasks" toggle to
    the flash store (or a new store) and use it in `Tasks/Index.vue`, to feel
    the difference between state that round-trips the server (`tasks` prop)
