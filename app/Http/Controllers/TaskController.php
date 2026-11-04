@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
+use App\Support\SyncTaskTags;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,31 +27,62 @@ class TaskController extends Controller
 {
     public function index(Request $request): Response
     {
-        $tasks = $request->user()->tasks()->latest()->get();
+        $tagFilter = $request->string('tag')->trim()->toString() ?: null;
+
+        $tasks = $request->user()
+            ->tasks()
+            ->with('tags:id,name,slug')
+            ->when($tagFilter, function ($query) use ($tagFilter) {
+                $query->whereHas('tags', fn ($q) => $q->where('slug', Str::lower($tagFilter)));
+            })
+            ->latest()
+            ->get();
 
         return Inertia::render('Tasks/Index', [
             'tasks' => $tasks,
+            'filters' => [
+                'tag' => $tagFilter !== null ? Str::lower($tagFilter) : null,
+            ],
+            'availableTags' => $request->user()
+                ->tags()
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug']),
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Tasks/Create');
+        return Inertia::render('Tasks/Create', [
+            'availableTags' => $request->user()
+                ->tags()
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug']),
+        ]);
     }
 
     public function store(StoreTaskRequest $request): RedirectResponse
     {
-        $request->user()->tasks()->create($request->validated());
+        $validated = $request->validated();
+        $tagNames = $validated['tags'] ?? [];
+        unset($validated['tags']);
+
+        $task = $request->user()->tasks()->create($validated);
+        app(SyncTaskTags::class)($task, $tagNames);
 
         return redirect()->route('tasks.index')->with('success', 'Task created.');
     }
 
-    public function edit(Task $task): Response
+    public function edit(Request $request, Task $task): Response
     {
         $this->authorize('update', $task);
+        $task->load('tags:id,name,slug');
 
         return Inertia::render('Tasks/Edit', [
             'task' => $task,
+            'availableTags' => $request->user()
+                ->tags()
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug']),
         ]);
     }
 
@@ -60,7 +93,12 @@ class TaskController extends Controller
      */
     public function update(UpdateTaskRequest $request, Task $task): RedirectResponse
     {
-        $task->update($request->validated());
+        $validated = $request->validated();
+        $tagNames = $validated['tags'] ?? [];
+        unset($validated['tags']);
+
+        $task->update($validated);
+        app(SyncTaskTags::class)($task, $tagNames);
 
         return redirect()->route('tasks.index')->with('success', 'Task updated.');
     }

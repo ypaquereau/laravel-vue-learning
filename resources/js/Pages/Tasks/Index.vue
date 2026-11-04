@@ -15,6 +15,11 @@ defineProps({
         type: Array,
         required: true,
     },
+    filters: {
+        type: Object,
+        default: () => ({ tag: null }),
+    },
+    availableTags: { type: Array, default: () => [] },
 });
 
 function destroy(task) {
@@ -48,6 +53,31 @@ function destroy(task) {
         <div class="py-12">
             <div class="mx-auto max-w-4xl sm:px-6 lg:px-8">
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    <div
+                        v-if="availableTags.length"
+                        class="flex flex-wrap items-center gap-2 border-b border-gray-100 p-4"
+                    >
+                        <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Filter</span>
+                        <Link
+                            v-for="tag in availableTags"
+                            :key="tag.id"
+                            :href="route('tasks.index', { tag: tag.slug })"
+                            class="rounded-md px-2 py-1 text-xs font-medium"
+                            :class="filters.tag === tag.slug
+                                ? 'bg-gray-800 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                        >
+                            {{ tag.name }}
+                        </Link>
+                        <Link
+                            v-if="filters.tag"
+                            :href="route('tasks.index')"
+                            class="text-xs text-gray-500 underline hover:text-gray-800"
+                        >
+                            Clear
+                        </Link>
+                    </div>
+
                     <ul
                         v-if="tasks.length"
                         class="divide-y divide-gray-200"
@@ -70,6 +100,16 @@ function destroy(task) {
                                 >
                                     {{ task.description }}
                                 </p>
+                                <div v-if="task.tags?.length" class="mt-1 flex flex-wrap gap-1">
+                                    <Link
+                                        v-for="tag in task.tags"
+                                        :key="tag.id"
+                                        :href="route('tasks.index', { tag: tag.slug })"
+                                        class="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 hover:bg-gray-200"
+                                    >
+                                        {{ tag.name }}
+                                    </Link>
+                                </div>
                             </div>
 
                             <div class="flex shrink-0 items-center gap-3 text-sm">
